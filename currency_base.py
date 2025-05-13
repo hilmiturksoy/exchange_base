@@ -75,13 +75,30 @@ class Usd_Currency:
     @classmethod
     def total_amount(cls):
         toplam_try = []
+        toplam_usd = []
+
+        print("🔹 TRY Bazlı İşlemler:")
         for islem_no, detay in cls.usd_list.items():
-            formatted_total = f"{detay['Total']:,.0f}".replace(",", ".")
-            print(f"İşlem {islem_no}: {formatted_total} TRY")
+            formatted_try = f"{detay['Total']:,.0f}".replace(",", ".")
+            print(f"İşlem {islem_no}: {formatted_try} TRY")
             toplam_try.append(detay['Total'])
 
-        genel_toplam = f"{sum(toplam_try):,.0f}".replace(",", ".")
-        return f"\nGenel Toplam: {genel_toplam} TRY"
+        print("\n🔹 USD Bazlı İşlemler:")
+        for islem_no, detay in cls.usd_list.items():
+            formatted_usd = f"{detay['usd']:,.0f}".replace(",", ".")
+            print(f"İşlem {islem_no}: {formatted_usd} USD")
+            toplam_usd.append(detay['usd'])  # str değil, float ekliyoruz
+
+        genel_toplam_try = f"{sum(toplam_try):,.0f}".replace(",", ".")
+        genel_toplam_usd = f"{sum(toplam_usd):,.0f}".replace(",", ".")
+
+        return f"\n Genel Toplamlar:\nUSD: {genel_toplam_usd} USD\nTRY: {genel_toplam_try} TRY"
+
+        genel_toplam_try = f"{sum(toplam_try):,.0f}".replace(",", ".")
+        return f"\nGenel Toplam: {genel_toplam_try} TRY"
+
+        genel_toplam_usd = f"{sum(toplam_usd):,.0f}".replace(",", ".")
+        return f"\nGenel Toplam: {genel_toplam_usd} USD"
 
 
 # İşlemler
