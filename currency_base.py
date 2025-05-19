@@ -3,7 +3,6 @@ from statistics import mean
 
 class CurrencyBase:
     islem = 0
-    currency_list = {}  # İşlem numarası -> tüm işlem detayları
 
     def __init__(self, rate, amount, transaction_firm, person):
         self.rate = rate
@@ -19,7 +18,7 @@ class CurrencyBase:
         total = self.rate * self.amount
         zaman = time.ctime()
 
-        CurrencyBase.currency_list[CurrencyBase.islem] = {
+        self.__class__.currency_list[CurrencyBase.islem] = {
             "type": "alis",
             "rate": self.rate,
             "amount": self.amount,
@@ -35,7 +34,7 @@ class CurrencyBase:
         total = self.rate * self.amount
         zaman = time.ctime()
 
-        CurrencyBase.currency_list[CurrencyBase.islem] = {
+        self.__class__.currency_list[CurrencyBase.islem] = {
             "type": "satis",
             "rate": self.rate,
             "amount": self.amount,
@@ -68,7 +67,6 @@ class CurrencyBase:
                 print(f"İşlem {delete} Başarı ile Silindi")
             else:
                 print("İşlem Numarası Bulunamadı")
-
         except ValueError:
             print("Geçersiz Numara")
 
@@ -127,9 +125,8 @@ class CurrencyBase:
         else:
             durum_text = f" {abs(kasa_durumu):,.2f}".replace(",", ".") + " TRY Kasa Fazlanız Mevcut"
 
-        # Anlık Doviz Durumu
+        # Anlık Döviz Durumu
         doviz_kasa_durumu = raw_alis_amt - raw_satis_amt
-
         if doviz_kasa_durumu == 0:
             doviz_durum_text = "✅ Kasa Durumu Sıfır"
         elif doviz_kasa_durumu < 0:
@@ -137,37 +134,28 @@ class CurrencyBase:
         else:
             doviz_durum_text = f" {abs(doviz_kasa_durumu):,.2f}".replace(",", ".") + " Döviz Fazlanız Mevcut"
 
-
         return (
             f"\n🔹 Alış İşlemleri:\n"
             f"Toplam Miktar: {alis_toplam_amt}\n"
             f"Toplam TRY: {alis_toplam_try} TRY\n"
             f"Ortalama Kur: {alis_ortalama_kur} TRY"
-
             f"\n\n🔸 Satış İşlemleri:\n"
             f"Toplam Miktar: {satis_toplam_amt}\n"
             f"Toplam TRY: {satis_toplam_try} TRY\n"
             f"Ortalama Kur: {satis_ortalama_kur} TRY\n"
-
-            f"\n🔹 Anlık Kasa Durumu:\n"
-            f"{durum_text}\n"
-
-            f"\n🔹 Anlık Kasa Durumu:\n"
-            f"{doviz_durum_text}\n"
+            f"\n🔹 Anlık Kasa Durumu:\n{durum_text}\n"
+            f"\n🔹 Anlık Döviz Durumu:\n{doviz_durum_text}\n"
         )
 
 
-
-
-
-
 class Usd_Currency(CurrencyBase):
+    currency_list = {}
     def __init__(self, rate, usd, transaction_firm, person):
         super().__init__(rate, usd, transaction_firm, person)
         self.currency_type = "USD"
 
-
 class Euro_Currency(CurrencyBase):
+    currency_list = {}
     def __init__(self, rate, euro, transaction_firm, person):
         super().__init__(rate, euro, transaction_firm, person)
         self.currency_type = "EUR"
@@ -189,12 +177,4 @@ class Euro_Currency(CurrencyBase):
 # print(Usd_Currency.transaction_list())
 
 # CurrencyBase.update_transaction(4,45,250,"IntelExpress","Test Name 4")
-
-islem_1 = Euro_Currency(45,100,"uot","test 1").oran_alis()
-islem_2 = Euro_Currency(50,90,"upt","test 2").oran_satis()
-islem3= Euro_Currency(45,100,"test","test 3").oran_satis()
-print(Euro_Currency.total_amount())
-
-
-
 
