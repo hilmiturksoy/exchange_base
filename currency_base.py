@@ -161,13 +161,129 @@ class Euro_Currency(CurrencyBase):
         self.currency_type = "EUR"
 
 
+
+
+class Opening_Cash:
+
+    cash = {}
+    toplam = 0
+    islem_no = 0
+
+    def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, fatura, other):
+        self.b200 = b200
+        self.b100 = b100
+        self.b50 = b50
+        self.b20 = b20
+        self.b10 = b10
+        self.b5 = b5
+        self.payporter = payporter
+        self.upt = upt
+        self.moneygram = moneygram
+        self.paragram = paragram
+        self.fatura = fatura
+        self.other = other
+        self.zaman = time.ctime()
+
+    def __str__(self):
+        nakit_toplam = (
+                self.b200 * 200 +
+                self.b100 * 100 +
+                self.b50 * 50 +
+                self.b20 * 20 +
+                self.b10 * 10 +
+                self.b5 * 5
+        )
+
+        return (
+            f"💵 Nakit Toplamı: {nakit_toplam:,.2f} TRY\n"
+            f"• 200 TL x {self.b200}\n"
+            f"• 100 TL x {self.b100}\n"
+            f"• 50 TL x {self.b50}\n"
+            f"• 20 TL x {self.b20}\n"
+            f"• 10 TL x {self.b10}\n"
+            f"• 5 TL x {self.b5}\n"
+            f"\n📌 Diğer Bakiyeler:\n"
+            f"Payporter: {self.payporter} TRY | UPT: {self.upt} TRY | MoneyGram: {self.moneygram} TRY | "
+            f"Paragram: {self.paragram} TRY | Fatura: {self.fatura} TRY | Other: {self.other} TRY\n"
+            f"🕒 İşlem Zamanı: {self.zaman}"
+        )
+
+    ### BU ALANDA BANKNOTLARI AYIRIYORUZ ###
+    def toplam_nakit(self):
+        toplam = (
+                self.b200 * 200 +
+                self.b100 * 100 +
+                self.b50 * 50 +
+                self.b20 * 20 +
+                self.b10 * 10 +
+                self.b5 * 5
+        )
+        return f"Toplam: {toplam:,.2f} TRY"
+
+    def open_balance_try(self):
+        Opening_Cash.islem_no += 1
+        Opening_Cash.cash[Opening_Cash.islem_no] = {
+            "nakit": self.toplam_nakit(),
+            "payporter": self.payporter,
+            "upt": self.upt,
+            "moneygram": self.moneygram,
+            "paragram": self.paragram,
+            "fatura": self.fatura,
+            "other": self.other,
+            "zaman": self.zaman,
+        }
+
+    def open_balance_usd(self):
+        Opening_Cash.islem_no += 1
+        Opening_Cash.usd_cash[Opening_Cash.islem_no] = {
+            "nakit": self.toplam_nakit(),
+            "payporter": self.payporter,
+            "upt": self.upt,
+            "moneygram": self.moneygram,
+            "paragram": self.paragram,
+            "other": self.other,
+            "zaman": self.zaman,
+        }
+
+    @classmethod
+    def total_balance(cls):
+        toplam = 0
+        for no, kayit in Opening_Cash.cash.items():
+            for key, value in kayit.items():
+                if isinstance(value, (int, float)):
+                    toplam += value
+        return f"Toplam TRY Bakiyeniz -> {toplam} TRY"
+
+    @classmethod
+    def gunluk_bakiye_listesi(cls):
+        for no, kayit in cls.cash.items():
+            toplam = sum(value for value in kayit.values() if isinstance(value, (int, float)))
+            zaman = kayit.get("zaman", "Bilinmiyor")
+            print(f"İşlem No: {no} | Zaman: {zaman} | Toplam Bakiye: {toplam} TRY")
+
+
+giris1 = Opening_Cash(1,1,1,1,0,0,100,1,1,1,1,1)
+giris1.open_balance_try()
+
+print(giris1.toplam_nakit())
+
+
+
+
+
+
+
+
+
+
 # İşlemler
 # alis_1 = Usd_Currency(39, 500, 'upt', 'Test Name 1').oran_alis()
 # alis_2 = Usd_Currency(39, 700, 'ria', 'Test Name 2').oran_alis()
 # alis_3 = Usd_Currency(39, 800, 'ria', 'Test Name 3').oran_alis()
 # alis_4 = Usd_Currency(39, 900, 'ria', 'Test Name 4').oran_alis()
 # alis_5 = Usd_Currency(39, 1000, 'MoneyGram', 'Test Name 5').oran_alis()
-# alis_6 = Usd_Currency(40,852,"KoronaPay","Test Name 6").oran_alis()
+# alis_6 = Usd_Currency(40,852,"KoronaPay","Test Name 6")
+# alis_6.oran_alis()
 # satis_1 = Usd_Currency(40,1000,"Kişisel","Test Name 1").oran_satis()
 # alis_7 = CurrencyBase(30,1000,"upt",'Test Name 7').oran_alis()
 
