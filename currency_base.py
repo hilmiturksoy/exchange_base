@@ -164,12 +164,8 @@ class Euro_Currency(CurrencyBase):
 
 
 class Opening_Cash:
-
-    cash = {}
-    toplam = 0
-    islem_no = 0
-
-    def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, fatura, other):
+    def __init__(self, b200=0, b100=0, b50=0, b20=0, b10=0, b5=0,
+                 payporter=0, upt=0, moneygram=0, paragram=0, other=0):
         self.b200 = b200
         self.b100 = b100
         self.b50 = b50
@@ -180,63 +176,26 @@ class Opening_Cash:
         self.upt = upt
         self.moneygram = moneygram
         self.paragram = paragram
-        self.fatura = fatura
         self.other = other
         self.zaman = time.ctime()
 
-    def __str__(self):
-        nakit_toplam = (
-                self.b200 * 200 +
-                self.b100 * 100 +
-                self.b50 * 50 +
-                self.b20 * 20 +
-                self.b10 * 10 +
-                self.b5 * 5
-        )
+        self.islem_no = 0
+        self.cash = {}
 
+    def toplam_nakit_sayi(self):
         return (
-            f"💵 Nakit Toplamı: {nakit_toplam:,.2f} TRY\n"
-            f"• 200 TL x {self.b200}\n"
-            f"• 100 TL x {self.b100}\n"
-            f"• 50 TL x {self.b50}\n"
-            f"• 20 TL x {self.b20}\n"
-            f"• 10 TL x {self.b10}\n"
-            f"• 5 TL x {self.b5}\n"
-            f"\n📌 Diğer Bakiyeler:\n"
-            f"Payporter: {self.payporter} TRY | UPT: {self.upt} TRY | MoneyGram: {self.moneygram} TRY | "
-            f"Paragram: {self.paragram} TRY | Fatura: {self.fatura} TRY | Other: {self.other} TRY\n"
-            f"🕒 İşlem Zamanı: {self.zaman}"
+            self.b200 * 200 +
+            self.b100 * 100 +
+            self.b50 * 50 +
+            self.b20 * 20 +
+            self.b10 * 10 +
+            self.b5 * 5
         )
 
-    ### BU ALANDA BANKNOTLARI AYIRIYORUZ ###
-    def toplam_nakit(self):
-        toplam = (
-                self.b200 * 200 +
-                self.b100 * 100 +
-                self.b50 * 50 +
-                self.b20 * 20 +
-                self.b10 * 10 +
-                self.b5 * 5
-        )
-        return f"Toplam: {toplam:,.2f} TRY"
-
-    def open_balance_try(self):
-        Opening_Cash.islem_no += 1
-        Opening_Cash.cash[Opening_Cash.islem_no] = {
-            "nakit": self.toplam_nakit(),
-            "payporter": self.payporter,
-            "upt": self.upt,
-            "moneygram": self.moneygram,
-            "paragram": self.paragram,
-            "fatura": self.fatura,
-            "other": self.other,
-            "zaman": self.zaman,
-        }
-
-    def open_balance_usd(self):
-        Opening_Cash.islem_no += 1
-        Opening_Cash.usd_cash[Opening_Cash.islem_no] = {
-            "nakit": self.toplam_nakit(),
+    def open_balance(self):
+        self.islem_no += 1
+        self.cash[self.islem_no] = {
+            "nakit": self.toplam_nakit_sayi(),
             "payporter": self.payporter,
             "upt": self.upt,
             "moneygram": self.moneygram,
@@ -245,52 +204,53 @@ class Opening_Cash:
             "zaman": self.zaman,
         }
 
-    @classmethod
-    def total_balance(cls):
+    @property
+    def total_balance(self):
         toplam = 0
-        for no, kayit in Opening_Cash.cash.items():
+        for no, kayit in self.cash.items():
             for key, value in kayit.items():
                 if isinstance(value, (int, float)):
                     toplam += value
-        return f"Toplam TRY Bakiyeniz -> {toplam} TRY"
+        return f"Toplam  Bakiyeniz -> {toplam} "
 
-    @classmethod
-    def gunluk_bakiye_listesi(cls):
-        for no, kayit in cls.cash.items():
+    def gunluk_bakiye_listesi(self):
+        sonuc = []
+        for no, kayit in self.cash.items():
             toplam = sum(value for value in kayit.values() if isinstance(value, (int, float)))
             zaman = kayit.get("zaman", "Bilinmiyor")
-            print(f"İşlem No: {no} | Zaman: {zaman} | Toplam Bakiye: {toplam} TRY")
+            sonuc.append(f"İşlem No: {no} | Zaman: {zaman} | Toplam Bakiye: {toplam} ")
+        return "\n".join(sonuc)
 
 
-giris1 = Opening_Cash(1,1,1,1,0,0,100,1,1,1,1,1)
-giris1.open_balance_try()
+class Try_Opening_Cash(Opening_Cash):
+    def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
+        super().__init__(b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other)
+        self.kasa_turu = "TRY"  # örnek ek alan
 
-print(giris1.toplam_nakit())
+    def kasa_bilgisi(self):
+        return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
+
+class Usd_Opening_Cash(Opening_Cash):
+    def __init__(self, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
+        super().__init__(0, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other)
+        self.kasa_turu = "USD"  # örnek ek alan
+
+    def kasa_bilgisi(self):
+        return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
 
 
+class Euro_Opening_Cash(Opening_Cash):
+    def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
+        super().__init__(b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other)
+        self.kasa_turu = "EURO"  # örnek ek alan
 
+    def kasa_bilgisi(self):
+        return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
 
+usd1 = Usd_Opening_Cash(10,1,1,1,1,1,1,1,1,1)
+usd1.open_balance()
+print(usd1.gunluk_bakiye_listesi())
 
-
-
-
-
-
-# İşlemler
-# alis_1 = Usd_Currency(39, 500, 'upt', 'Test Name 1').oran_alis()
-# alis_2 = Usd_Currency(39, 700, 'ria', 'Test Name 2').oran_alis()
-# alis_3 = Usd_Currency(39, 800, 'ria', 'Test Name 3').oran_alis()
-# alis_4 = Usd_Currency(39, 900, 'ria', 'Test Name 4').oran_alis()
-# alis_5 = Usd_Currency(39, 1000, 'MoneyGram', 'Test Name 5').oran_alis()
-# alis_6 = Usd_Currency(40,852,"KoronaPay","Test Name 6")
-# alis_6.oran_alis()
-# satis_1 = Usd_Currency(40,1000,"Kişisel","Test Name 1").oran_satis()
-# alis_7 = CurrencyBase(30,1000,"upt",'Test Name 7').oran_alis()
-
-# print(Usd_Currency.transaction_list())
-# Usd_Currency.remove_transaction(1)
-# Usd_Currency.remove_transaction(2)
-# print(Usd_Currency.transaction_list())
-
-# CurrencyBase.update_transaction(4,45,250,"IntelExpress","Test Name 4")
-
+usd2= Usd_Opening_Cash(100,1,1,1,1,1,1,1,1,1)
+usd2.open_balance()
+print(usd2.gunluk_bakiye_listesi())
