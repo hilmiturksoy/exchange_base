@@ -1,4 +1,5 @@
 import time
+from functools import total_ordering
 from statistics import mean
 
 class CurrencyBase:
@@ -9,6 +10,7 @@ class CurrencyBase:
         self.amount = amount
         self.transaction_firm = transaction_firm
         self.person = person
+        self.currency_list = {}
         CurrencyBase.islem += 1
 
     def __str__(self):
@@ -30,8 +32,9 @@ class CurrencyBase:
 
         return f'{self.rate} TRY x {self.amount} = {total} TRY - İşlem Zamanı: {zaman}, Transaction Firm: {self.transaction_firm}, Person: {self.person}'
 
+
     def oran_satis(self):
-        total = self.rate * self.amount
+        total = float(self.rate * self.amount)
         zaman = time.ctime()
 
         self.__class__.currency_list[CurrencyBase.islem] = {
@@ -45,6 +48,7 @@ class CurrencyBase:
         }
 
         return f'{self.rate} TRY x {self.amount} = {total} TRY - İşlem Zamanı: {zaman}, Transaction Firm: {self.transaction_firm}, Person: {self.person}'
+
 
     @classmethod
     def transaction_list(cls):
@@ -84,6 +88,7 @@ class CurrencyBase:
                 return {islem_no: cls.currency_list[islem_no]}
         except ValueError:
             return "Lütfen geçerli bir işlem numarası giriniz"
+
 
     @classmethod
     def total_amount(cls):
@@ -147,6 +152,35 @@ class CurrencyBase:
             f"\n🔹 Anlık Döviz Durumu:\n{doviz_durum_text}\n"
         )
 
+    """
+    RAW_ALIS_TRY --->ANA TRY KASASINDAN CIKIS YAPILIR
+    RAW_SATIS_TRY --->ANA TRY KASASINA GIRIS YAPILIR
+    RAW_SATIS_AMT --->ANA DOVIZ KASASINDAN CIKIS YAPILIR
+    RAW_ALIS_AMT ---> ANA DOVIZ KASASINA GIRIS YAPILIR
+    BU ALAN TOTAL_AMOUNT SINIFINDAN KOPYALANMIŞTIR
+    """
+    @property    #GOZDEN GECIRILECEK
+    def sum_for_total_amount(self):
+        alis_try = []
+        alis_amt = []
+        satis_try = []
+        satis_amt = []
+
+        for islem_no, detay in self.currency_list.items():
+            if detay.get("type") == "alis":
+                alis_try.append(detay["Total"])
+                alis_amt.append(detay["amount"])
+            elif detay.get("type") == "satis":
+                satis_try.append(detay["Total"])
+                satis_amt.append(detay["amount"])
+
+        raw_alis_try = sum(alis_try)
+        raw_alis_amt = sum(alis_amt)
+        raw_satis_try = sum(satis_try)
+        raw_satis_amt = sum(satis_amt)
+
+        return raw_alis_try, raw_alis_amt, raw_satis_try, raw_satis_amt
+
 
 class Usd_Currency(CurrencyBase):
     currency_list = {}
@@ -164,6 +198,10 @@ class Euro_Currency(CurrencyBase):
 
 
 class Opening_Cash:
+    """
+    BU ALANDA GUNLUK KASA ACILISI YAPILMAKTADIR
+    PARA BIRIMLERININ GIRISLERI YAPILIR VE KASAYA ACILIS ICIN EKLENIR (SELF.CASH)
+    """
     def __init__(self, b200=0, b100=0, b50=0, b20=0, b10=0, b5=0,
                  payporter=0, upt=0, moneygram=0, paragram=0, other=0):
         self.b200 = b200
@@ -211,7 +249,10 @@ class Opening_Cash:
             for key, value in kayit.items():
                 if isinstance(value, (int, float)):
                     toplam += value
-        return f"Toplam  Bakiyeniz -> {toplam} "
+        return toplam
+
+
+
 
     def gunluk_bakiye_listesi(self):
         sonuc = []
@@ -221,14 +262,33 @@ class Opening_Cash:
             sonuc.append(f"İşlem No: {no} | Zaman: {zaman} | Toplam Bakiye: {toplam} ")
         return "\n".join(sonuc)
 
+    @property
+    def nakit_kasa(self):
+        toplam = 0
+        for kayit in self.cash.values():
+            if 'nakit' in kayit and isinstance(kayit['nakit'], (int, float)):
+                toplam += kayit['nakit']
+        return toplam
+
 
 class Try_Opening_Cash(Opening_Cash):
     def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
         super().__init__(b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other)
-        self.kasa_turu = "TRY"  # örnek ek alan
+        self.kasa_turu = "TRY"
+
+    def update_with_transaction_result(self, raw_alis_try, raw_satis_try):
+        fark = raw_satis_try - raw_alis_try
+        if self.islem_no in self.cash:
+            self.cash[self.islem_no]["try_hareket"] = fark
+            self.cash[self.islem_no]["nakit"] += fark
+        else:
+            print("🔴 Uyarı: İlgili işlem numarası bulunamadı.")
+
+        return fark
 
     def kasa_bilgisi(self):
         return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
+
 
 class Usd_Opening_Cash(Opening_Cash):
     def __init__(self, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
@@ -247,10 +307,23 @@ class Euro_Opening_Cash(Opening_Cash):
     def kasa_bilgisi(self):
         return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
 
-usd1 = Usd_Opening_Cash(10,1,1,1,1,1,1,1,1,1)
-usd1.open_balance()
-print(usd1.gunluk_bakiye_listesi())
 
-usd2= Usd_Opening_Cash(100,1,1,1,1,1,1,1,1,1)
-usd2.open_balance()
-print(usd2.gunluk_bakiye_listesi())
+
+
+"""genel kasa girisi"""
+kasa_acilis = Try_Opening_Cash(500,100,100,10,10,1,1,1,1,1,1)
+kasa_acilis.open_balance()
+
+
+
+
+usd_alis = Usd_Currency(40,100,"ria","test")
+usd_alis.oran_alis()
+usd_satis = Usd_Currency(45,100,"ria", "test")
+
+
+
+print(kasa_acilis.nakit_kasa)
+print(type(kasa_acilis.nakit_kasa))
+
+
