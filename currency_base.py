@@ -10,7 +10,6 @@ class CurrencyBase:
         self.amount = amount
         self.transaction_firm = transaction_firm
         self.person = person
-        self.currency_list = {}
         CurrencyBase.islem += 1
 
     def __str__(self):
@@ -159,14 +158,15 @@ class CurrencyBase:
     RAW_ALIS_AMT ---> ANA DOVIZ KASASINA GIRIS YAPILIR
     BU ALAN TOTAL_AMOUNT SINIFINDAN KOPYALANMIŞTIR
     """
-    @property    #GOZDEN GECIRILECEK
+
+    @property
     def sum_for_total_amount(self):
         alis_try = []
         alis_amt = []
         satis_try = []
         satis_amt = []
 
-        for islem_no, detay in self.currency_list.items():
+        for islem_no, detay in self.__class__.currency_list.items():
             if detay.get("type") == "alis":
                 alis_try.append(detay["Total"])
                 alis_amt.append(detay["amount"])
@@ -270,6 +270,21 @@ class Opening_Cash:
                 toplam += kayit['nakit']
         return toplam
 
+    def guncel_nakit_durum(self, currency_class):
+        """
+        currency_class: Usd_Currency gibi CurrencyBase'den türeyen sınıf
+        """
+        if not hasattr(currency_class, "sum_for_total_amount"):
+            raise ValueError("Geçersiz döviz sınıfı")
+
+        try:
+            raw_alis_try, _, raw_satis_try, _ = currency_class.sum_for_total_amount()
+            return self.nakit_kasa + raw_satis_try - raw_alis_try
+        except Exception as e:
+            print(f"Hata: {e}")
+            return self.nakit_kasa
+
+
 
 class Try_Opening_Cash(Opening_Cash):
     def __init__(self, b200, b100, b50, b20, b10, b5, payporter, upt, moneygram, paragram, other):
@@ -288,6 +303,8 @@ class Try_Opening_Cash(Opening_Cash):
 
     def kasa_bilgisi(self):
         return f"Kasa Türü: {self.kasa_turu} | {self.total_balance}"
+
+
 
 
 class Usd_Opening_Cash(Opening_Cash):
@@ -311,19 +328,24 @@ class Euro_Opening_Cash(Opening_Cash):
 
 
 """genel kasa girisi"""
-kasa_acilis = Try_Opening_Cash(500,100,100,10,10,1,1,1,1,1,1)
+kasa_acilis = Try_Opening_Cash(1,1,0,0,0,0,0,0,0,0,0)
 kasa_acilis.open_balance()
-
-
+print(kasa_acilis.kasa_bilgisi())
 
 
 usd_alis = Usd_Currency(40,100,"ria","test")
 usd_alis.oran_alis()
 usd_satis = Usd_Currency(45,100,"ria", "test")
+usd_satis.oran_satis()
+
+print(f"Sonuc {usd_alis.sum_for_total_amount}")
+
+print(f" kasa acilis {kasa_acilis.nakit_kasa}")
+# print(type(kasa_acilis.nakit_kasa))
 
 
+def guncel_nakit_durum():
+    resould = kasa_acilis.nakit_kasa + usd_alis.sum_for_total_amount[0] - usd_alis.sum_for_total_amount[2]
+    return resould
 
-print(kasa_acilis.nakit_kasa)
-print(type(kasa_acilis.nakit_kasa))
-
-
+print(guncel_nakit_durum())
